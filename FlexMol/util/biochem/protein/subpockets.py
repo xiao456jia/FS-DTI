@@ -407,4 +407,3 @@ def process_protein_subpocket(protein_name, pdb_dir, subpocket_dir, max_subpocke
         constructed_graphs = dgl.batch(constructed_graphs)
 
         return constructed_graphs
-            

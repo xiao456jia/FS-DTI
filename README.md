@@ -1,28 +1,28 @@
-# SP-DTI: Subpocket-Informed Transformer for Drug-Target Interaction Prediction
+# FS-DTI：Predicting drug-target interactions by linking molecular fragments to protein subpockets
 
 ## Overview
 
 <p align="center">
-  <img src="images/SP-DTI.png" alt="SP-DTI Overview" width="600px" />
+  <img src="images/FS-DTI.png" alt="FS-DTI Overview" width="600px" />
 </p>
 
-SP-DTI is a Subpocket-Informed Transformer model for predicting drug-target interactions (DTI). It employs a Subpocket Modeling Module (SMM) for granular modeling of protein binding sites and a seq-Graph Fusion Module (SGFM) to integrate graph- and sequence-level information. Benchmark evaluations demonstrate that SP-DTI outperforms state-of-the-art models and remains robust in unseen protein and cross-domain settings.
+FS-DTI is a substructure information transformer model used for predicting drug-target interactions (DTI). It employs a Fragment-Subpocket Modeling Module (FSMM) to finely model the binding sites of proteins and drug molecules, and uses a Global Feature Fusion Module (GFFM) to integrate graph-level and sequence-level information. Benchmark evaluations show that FS-DTI outperforms state-of-the-art models.
 
 ## Installation
-SP-DTI is based on our previous project, [FlexMol](https://github.com/Steven51516/FlexMol/). We modified FlexMol by removing unused components and added new modules, including unique encoders and interaction layers specific to SP-DTI.
+
  
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/Steven51516/SP-DTI.git
-   cd SP-DTI
+   git clone https://github.com/Steven51516/FS-DTI.git
+   cd FP-DTI
    ```
 
 2. **Create a New Conda Environment**
 
    ```bash
-    conda create --name spdti python=3.8
-    conda activate spdti
+    conda create --name fsdti python=3.8
+    conda activate fsdti
    ```
 2. **Install Dependencies**
    ```bash
@@ -32,13 +32,23 @@ SP-DTI is based on our previous project, [FlexMol](https://github.com/Steven5151
 ## Dataset Preparation
 
 ### Step 1: Download the Dataset
-Please download the dataset from the [MolTrans repository](https://github.com/kexinhuang12345/MolTrans?tab=readme-ov-file) for the data splits of DAVIS and BIOSNAP.
+
+Download the original dataset from the [MolTrans repository](https://github.com/kexinhuang12345/MolTrans?tab=readme-ov-file) for the data splits of DAVIS and BIOSNAP.
 
 ### Step 2: Generate 3D Protein Structures
 We use AlphaFold to convert protein sequences into 3D structures. You can download our precomputed AlphaFold results here: [BIOSNAP](https://drive.google.com/file/d/1bldeecpr5g9Q-qlTeHjdm5Z0MYG2j2Oa/view?usp=sharing)/[DAVIS](https://drive.google.com/file/d/198p6QG_WuSAl425y1OXtfR8TFunQbX6v/view?usp=sharing).
 
 ### Step 3: Identify Subpockets
 Our method utilizes the CAVIAR algorithm to identify subpockets from the AlphaFold-generated structures. For sample scripts to run CAVIAR, please refer to our [Google Colab](https://colab.research.google.com/drive/1H2-uZiczJNkzgtFVR4Lq-oR99olTstlu?usp=sharing). Alternatively, you can download our processed dataset here: [Google Drive Link](https://drive.google.com/file/d/1hvQR5iB9QW_xEyBMhQp0cZtJlk2QEXN_/view?usp=sharing).
+
+### Screen negative samples
+If you want to filter negative samples yourself using the method in the paper, you can execute the following command:
+```bash
+python neg_sampler.py #Generate a negative sample matrix based on the data_3 dataset in Negactive folder
+```
+Then take the intersection with the negative samples in BIOSNAP/DAVIS.
+
+Download the original data_3 dataset from the [DTI-MvSCA repository](https://github.com/plhhnu/DTI-MvSCA) in data_process/mat_data.
 
 ### Dataset Organization
 We recommend structuring the dataset in the following format:
@@ -56,18 +66,14 @@ data/
 Replace DATASET_NAME with the name of the dataset you are working on (e.g., DAVIS, BIOSNAP) and ensure that the subfolders contain the respective files for each step.
 
 ## Run
-Our script automatically manages everything from preprocessing to evaluation. If you want to analyze the results in a custom way (e.g., using your own metrics), you can replace the last line, `trainer.test`, with `trainer.inference`, which returns two lists: the predicted labels and the ground truth labels.
 
-You can directly run the following command to start the experiments:
+If you have set the file path in run.py ，you can directly run the following command to start the experiments:
 
 ```bash
-python run.py --task {davis/biosnap} --train_split <path_to_train_split> \
---val_split <path_to_val_split> --test_split <path_to_test_split> \
---pdb_dir <path_to_pdb_files> --subpocket_dir <path_to_subpockets> \
---metrics_dir <path_to_metrics_output>
+python run.py 
 ```
-
 ### Explanation of Parameters
+You need to set the following parameters in the run.py file  
 --task {davis/biosnap}: Specifies the dataset you are working on. Replace {davis/biosnap} with either davis or biosnap depending on your experiment.
 
 --train_split <path_to_train_split>: Path to the training dataset split.
@@ -85,10 +91,16 @@ python run.py --task {davis/biosnap} --train_split <path_to_train_split> \
 For instance, if you are running an experiment with the DAVIS dataset and have all the required files prepared, the command might look like this:
 
 ```bash
-python run.py --task davis --train_split data/davis/train.txt \
---val_split data/davis/val.txt --test_split data/davis/test.txt \
---pdb_dir data/davis/pdb/ --subpocket_dir data/davis/subpockets/ \
---metrics_dir test_result/
+python run.py 
+
+#Parameter Settings
+#task = "davis"
+# train_split = "data/DAVIS/split_datasets_D/train_set.txt"
+# val_split = "data/DAVIS/split_datasets_D/validation_set.txt"
+# test_split = "data/DAVIS/split_datasets_D/test_set.txt"
+#pdb_dir = "data/DAVIS/DAVIS_pdb/"
+#subpocket_dir = "data/DAVIS/subpocket/"
+#metrics_dir = "test_result/DAVIS/"
 ```
 
 ## Pretrained Language Models
@@ -98,10 +110,3 @@ Our scripts automatically handle the generation of embeddings from the pretraine
 
 To enable pickle storage, simply changing the parameter `pickle_dir = ...` in the relevant lines corresponding to the encoders in run.py. This will direct the generated embeddings to be saved in the specified directory for future use.
 
-## Contact
-Reach us at [sliu0727@usc.edu](mailto:sliu0727@usc.edu) or open a GitHub issue.
-
-## License
-SP-DTI is licensed under the BSD 3-Clause License.
-
-This software includes components modified from the FlexMol project, which is licensed under the BSD 3-Clause License.

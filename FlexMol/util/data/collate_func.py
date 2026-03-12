@@ -1,7 +1,9 @@
 import torch
 import numpy as np
 
+
 def get_collate(x, collate_func):
+
     collate_func.append(None)
     transposed_x = list(zip(*x))
     collated_data = [func(data) if func is not None else torch.tensor(np.array(data)) for func, data in zip(collate_func, transposed_x)]

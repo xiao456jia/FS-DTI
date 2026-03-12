@@ -96,14 +96,14 @@ def load_BIOSNAP(file_path):
 
 def load_DAVIS(path):
     data = load_helper(path)
-    drugs = data[1]
-    targets = data[2]
+    drugs = data[2]
+    targets = data[1]
     affinity = data[3]
     ids = data[0]
-    affinity = [float(i) for i in affinity]
+    affinity = [int(i) for i in affinity]
     df_data = {
-        'Drug': targets,
-        'Protein': drugs,
+        'Drug': drugs,
+        'Protein': targets,
         'Y': affinity, 
         "Protein_ID": ids
 

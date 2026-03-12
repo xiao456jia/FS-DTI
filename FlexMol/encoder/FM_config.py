@@ -1,4 +1,9 @@
+from .Inter_layer.f_d_attention import FDAttention
+from .Inter_layer.f_o_attention import FOAttention
+from .Inter_layer.f_s_attention import FSAttention
 from .enc_layer import *
+from .enc_layer.drug_fragment import FAG
+from .enc_layer.gnn import DGL_FragmentGNN
 from .featurizer import *
 import inspect
 from FlexMol.encoder.Inter_layer import *
@@ -28,10 +33,14 @@ def process_configs(model_class, featurizer_class, config):
 
 def init_method(method, user_config, type, custom_method = None):
     methods = {
+
         "drug": {
             "CNN": (CNN, DrugOneHotFeaturizer),
             "GCN": (DGL_GCN, DrugCanonicalFeaturizer),
-            "GCN_Chemberta": (DGL_GCN_Chemberta, DrugChemBertGNNFeaturizer)
+            "GCN_Chemberta": (DGL_GCN_Chemberta, DrugChemBertGNNFeaturizer),
+
+            "Fragments": (FAG, DrugFragmentsGNNFeaturizer)
+
         },
         "prot_seq": {
             "CNN": (CNN, ProteinOneHotFeaturizer),
@@ -71,7 +80,10 @@ def init_inter_layer(method, parent_output_shapes, **config):
             "highway" : Highway,
             "gated_fusion":GatedFusionLayer,
             "bilinear_fusion": BilinearFusion,
-            "pocket_attention": PocketTransformer
+            "pocket_attention": PocketTransformer,
+            "f_o_attention": FOAttention,
+            "f_s_attention": FSAttention,
+            "f_d_attention": FDAttention,
     }
 
     inter_class = methods.get(method)
@@ -88,6 +100,19 @@ def init_inter_layer(method, parent_output_shapes, **config):
         if len(parent_output_shapes) != 1:
             raise ValueError("Self interaction requires exactly 1 parent node.")
         inter_layer = inter_class(parent_output_shapes[0][1], **method_config)
+
+    elif method == "f_o_attention":
+        # if len(parent_output_shapes) != 1:
+        #     raise ValueError("Self interaction requires exactly 1 parent node.")
+        inter_layer = inter_class(**method_config)
+    elif method == "f_s_attention":
+        # if len(parent_output_shapes) != 1:
+        #     raise ValueError("Self interaction requires exactly 1 parent node.")
+        inter_layer = inter_class(**method_config)
+    elif method == "f_d_attention":
+        # if len(parent_output_shapes) != 1:
+        #     raise ValueError("Self interaction requires exactly 1 parent node.")
+        inter_layer = inter_class(**method_config)
 
     elif method == "cross_attention":
         if len(parent_output_shapes) != 2:

@@ -3,6 +3,12 @@ from collections import OrderedDict
 import torch.nn as nn
 from .FM_config import *
 
+class DrugFragEncoder(EncoderNode):
+    """ Specific encoder for drug fragments data. """
+    def __init__(self, method, pickle_dir=None, use_hash = True, custom_method = None, **config):
+        super().__init__(method, pickle_dir, use_hash, **config)
+        self.input_type = FlexMol.DRUG_FRAG
+        self.model, self.featurizer, self.model_training_setup = init_method(self.method, config, "drug", custom_method)
 
 class DrugEncoder(EncoderNode):
     """ Specific encoder for drug data. """
@@ -37,7 +43,10 @@ class FlexMol:
         nodes (list): List of nodes representing individual encoders or interaction layers.
         encoders_dic (OrderedDict): Dictionary mapping input types to encoder nodes.
         encoder_factory (dict): Dictionary mapping input types to encoder classes for instantiation.
-
+    属性：
+       nodes (list): Represents a list of nodes of a single encoder or interaction layer.
+       encoders_dic (OrderedDict): A dictionary mapping input types to encoder nodes.
+       encoder_factory (dict): A dictionary mapping input types to encoder classes for instantiation.
     Methods:
         init_drug_encoder(model, **config): Initializes and registers a drug encoder.
         init_prot_encoder(model, pdb=False, **config): Initializes and registers a protein encoder, optionally for PDB data.
@@ -55,6 +64,7 @@ class FlexMol:
 
 
     DRUG = "Drug"
+    DRUG_FRAG="Drug"
     PROT_SEQ = "Protein"
     PROT_3D = "Protein_ID"
 
@@ -64,20 +74,24 @@ class FlexMol:
         self.encoder_factory = {
             FlexMol.DRUG: DrugEncoder,
             FlexMol.PROT_SEQ: ProteinSEQEncoder,
-            FlexMol.PROT_3D: ProteinPDBEncoder
+            FlexMol.PROT_3D: ProteinPDBEncoder,
+            FlexMol.DRUG_FRAG: DrugFragEncoder
         }
         self.model = None
         self.custom_method = {
             "drug" : {}, 
             "prot_seq": {},
-            "prot_3d":{}
+            "prot_3d":{},
+
         }
 
     def register_method(self, type, method_name, encoder_layer_class, featurizer_class):
         self.custom_method[type][method_name] = (encoder_layer_class, featurizer_class)
 
-    def init_drug_encoder(self, model, pickle_dir = None, use_hash = False, **config):
+    def init_drug_encoder(self, model,fragments=False, pickle_dir = None, use_hash = False, **config):
         """Initializes a drug encoder and registers it under the drug category."""
+        if fragments:
+            return self.init_encoder(FlexMol.DRUG_FRAG, model, pickle_dir, use_hash, self.custom_method, **config)
         return self.init_encoder(FlexMol.DRUG, model, pickle_dir, use_hash, self.custom_method, **config)
 
     def init_prot_encoder(self, model, pdb=False, pickle_dir = None, use_hash = False, **config):
@@ -196,7 +210,8 @@ class FlexMol:
         self.custom_method = {
             "drug": {},
             "prot_seq": {},
-            "prot_3d": {}
+            "prot_3d": {},
+            #"drug_frag": {}
         }
 
 

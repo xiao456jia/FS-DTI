@@ -20,6 +20,8 @@ from tokenizers.pre_tokenizers import Split
 from transformers import AutoTokenizer, AutoModel
 import re
 
+from ...util.biochem.drug.fragment import process_drug_fragment
+
 
 # several methods adapted from https://github.com/kexinhuang12345/DeepPurpose/blob/master/DeepPurpose/utils.py
 
@@ -115,7 +117,7 @@ class MorganFeaturizer(Featurizer):
 
 class ChemBERTaFeaturizer(Featurizer):
     """Featurizer using ChemBERTa model to generate molecular embeddings."""
-    def __init__(self, model_path="DeepChem/ChemBERTa-77M-MTR", mode='mean'):
+    def __init__(self, model_path="ChemBERTa-77M-MTR", mode='mean'):
         super().__init__()
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModelForMaskedLM.from_pretrained(model_path)
@@ -144,10 +146,10 @@ class ChemBERTaFeaturizer(Featurizer):
 class DrugChemBertFeaturizer(Featurizer):
     def __init__(self):
         super().__init__()
-        model_name = "/root/sliu/BioEncoder/ChemBERTa-77M-MLM"
+        model_name = "ChemBERTa-77M-MLM"
         new_tokenizer = Tokenizer(
             WordLevel.from_file(
-                '/root/sliu/BioEncoder/ChemBERTa-77M-MLM/vocab.json', 
+                'ChemBERTa-77M-MLM/vocab.json',
                 unk_token='[UNK]'
         ))
 
@@ -225,3 +227,11 @@ class DrugChemBertGNNFeaturizer(Featurizer):
         bert_embedding = self.bert(x)
         graph.ndata['bert'] = bert_embedding
         return graph
+
+class DrugFragmentsGNNFeaturizer(Featurizer):
+    def __init__(self, fragment_num = 11):
+        super(DrugFragmentsGNNFeaturizer, self).__init__()
+        self.max_fragments = fragment_num
+
+    def transform(self, x):
+        return process_drug_fragment(x, self.max_fragments)

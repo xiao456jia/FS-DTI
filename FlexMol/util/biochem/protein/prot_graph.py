@@ -202,6 +202,7 @@ def merge(graphs):
 
 
 
+
 # I changed several lines from the graphein library since the model_index caused errors sometimes
 def read_pdb_to_dataframe(
     path: Optional[Union[str, os.PathLike]] = None,
@@ -263,7 +264,6 @@ def read_pdb_to_dataframe(
 
     return pd.concat([atomic_df.df["ATOM"], atomic_df.df["HETATM"]])
 
-    
 
 # calculate esm embedding for long sequences > 1022
 def compute_esm_embedding_long(sequence, representation="residue", model_name="esm1b_t33_650M_UR50S", output_layer=33, chunk_size=1022):
@@ -313,6 +313,7 @@ def create_prot_dgl_graph(pdb_name, data_dir):
         processing_funcs = [deprotonate_structure, convert_structure_to_centroids, remove_insertions]
         raw_df = read_pdb_to_dataframe(path=os.path.join(data_dir, f"{pdb_name}.pdb"))
         df = process_dataframe(raw_df, atom_df_processing_funcs=processing_funcs)
+        #print(df)
         g = initialise_graph_with_metadata(protein_df=df,
                                         raw_pdb_df=raw_df,
                                         pdb_code=pdb_name,
@@ -345,7 +346,7 @@ def create_prot_dgl_graph(pdb_name, data_dir):
         print("error finding protein strcuture!")
 
 
-
+#用这个
 def create_prot_esm_dgl_graph(pdb_name, data_dir):
     def get_graph(pdb_name, data_dir):
         processing_funcs = [deprotonate_structure, convert_structure_to_centroids, remove_insertions]

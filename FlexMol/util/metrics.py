@@ -94,7 +94,7 @@ def range_logAUC(true_y, predicted_score, FPR_range=(0.001, 0.1)):
 def rmse(y_true, y_pred):
     return np.sqrt(mean_squared_error(y_true, y_pred))
 
-
+#Calculate the recall when the specified precision threshold is reached; use the precision-recall curve to find the minimum recall that meets the condition
 def recall_at_precision_k(y_true, y_pred, threshold=0.9):
     pr, rc, thr = precision_recall_curve(y_true, y_pred)
     if len(np.where(pr >= threshold)[0]) > 0:
@@ -130,7 +130,7 @@ class Evaluator:
             "pcc": pcc,
             "spearman": stats.spearmanr,
 
-            # Binary classification metrics
+            # Binary classification metrics：
             "roc-auc": roc_auc_score,
             "pr-auc": average_precision_score,
             "range_logAUC": range_logAUC,

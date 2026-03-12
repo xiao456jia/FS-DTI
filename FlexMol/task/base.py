@@ -70,7 +70,7 @@ class BaseTrainer(ABC):
     def post_process_output(self, output):
         """
         Post-processes the output of the model.
-
+        处理模型输出的后处理方法
         Args:
             output: Output of the model.
 
@@ -83,7 +83,7 @@ class BaseTrainer(ABC):
     def get_default_metrics(self):
         """
         Returns the default metrics for evaluation.
-
+        返回默认评估指标列表
         Returns:
             List of default metrics.
         """
@@ -117,11 +117,12 @@ class BaseTrainer(ABC):
         Returns:
             Tuple of transformed datasets.
         """
+
         combined_df = self.combine_datasets(train_df, val_df, test_df)
         transformed_combined_df = self.transform_dataset(combined_df)
         return self.separate_datasets(transformed_combined_df)
      
-
+    #数据集合并
     def combine_datasets(self, train_df, val_df, test_df):
         """
         Combines the training, validation, and testing DataFrames into a single DataFrame.
@@ -139,7 +140,7 @@ class BaseTrainer(ABC):
         test_df['dataset'] = 'test'
         return pd.concat([train_df, val_df, test_df], ignore_index=True)
 
-
+    #数据集分离
     def separate_datasets(self, combined_df):
         """
         Separates the combined DataFrame back into training, validation, and testing DataFrames.
@@ -179,7 +180,7 @@ class BaseTrainer(ABC):
             if self.encoder_input is None:
                 if len(self.encoders) != 2:
                     raise ValueError("Please assign encoder_input when number of encoders > 2.")
-            
+
                 input_map = {
                     FlexMol.DRUG: ["Drug1", "Drug2"],
                     FlexMol.PROT_3D: ["Protein1_ID", "Protein2_ID"],
@@ -202,6 +203,10 @@ class BaseTrainer(ABC):
         data_dict['Y'] = df['Y']
         data_dict['dataset'] = df['dataset']
         return pd.DataFrame(data_dict)
+
+        #新改
+
+
 
     def to_device(self, *inputs_and_label):
         """
@@ -262,6 +267,10 @@ class BaseTrainer(ABC):
             self.train_one_epoch(train_loader, epoch)
             if val_loader:
                 val_loss, val_labels, val_predictions = self.inference(val_loader)
+
+                # print("Unique labels in val:", np.unique(val_labels))
+                # print("Label counts:", np.bincount(val_labels))
+
                 print(f'Epoch: {epoch} \tValidation Loss: {val_loss:.6f}')
                 if early_stopping_metric:
                     if(early_stopping_metric == "loss"):
@@ -289,6 +298,13 @@ class BaseTrainer(ABC):
             if self.scheduler is not None:
                 self.scheduler.step()
 
+    def label(self,df):
+        df_loader = self.create_loader(df)
+        if df_loader:
+            df_loss, df_labels, df_predictions = self.inference(df_loader)
+
+            print("Unique labels in val:", np.unique(df_labels))
+            print("Label counts:", np.bincount(df_labels))
 
     def train_one_epoch(self, train_loader, epoch):
         """
@@ -308,15 +324,20 @@ class BaseTrainer(ABC):
         for batch_idx, (*inputs, label) in progress_bar:
             inputs_and_label = self.to_device(*inputs, label)
             self.optimizer.zero_grad()
+
             output = self.model(*inputs_and_label[:-1]).float().squeeze(1)
+
             loss = self.criterion(output, inputs_and_label[-1])
+
             loss.backward()
+
             self.optimizer.step()
             batch_size = inputs_and_label[-1].size(0)
             train_loss += loss.item() * batch_size
             total_samples += batch_size
+
             progress_bar.set_postfix({'loss': train_loss / total_samples})
-        
+
         train_loss /= total_samples
         print(f'Epoch: {epoch} \tTraining Loss: {train_loss:.6f}')
         return train_loss
@@ -325,7 +346,7 @@ class BaseTrainer(ABC):
     def inference(self, loader):
         """
         Performs inference on the data.
-
+        模型评估
         Args:
             loader: DataLoader for the data.
 
@@ -338,6 +359,7 @@ class BaseTrainer(ABC):
         all_predictions = []
         with torch.no_grad():
             for *inputs, label in loader:
+                #print(label)
                 inputs_and_label = self.to_device(*inputs, label)
                 output = self.model(*inputs_and_label[:-1]).float().squeeze(1)
                 loss = self.criterion(output, inputs_and_label[-1])
@@ -346,6 +368,7 @@ class BaseTrainer(ABC):
                 all_labels.extend(label.cpu().numpy())
                 all_predictions.extend(predictions.cpu().numpy())
         total_loss /= len(loader.dataset)
+
         return total_loss, all_labels, all_predictions
 
     def test(self, test_df, threshold = None):
@@ -379,7 +402,7 @@ class BaseTrainer(ABC):
         if self.metrics_dir:
             if not os.path.exists(self.metrics_dir):
                 os.makedirs(self.metrics_dir)
-            with open(os.path.join(self.metrics_dir, 'test_metrics.txt'), 'w') as f:
+            with open(os.path.join(self.metrics_dir, 'test_metrics1.txt'), 'w') as f:
                 for metric, value in metrics.items():
                     f.write(f'{metric}: {value:.6f}\n')
         else:
@@ -394,3 +417,5 @@ class BaseTrainer(ABC):
             path (str): The path where the model will be saved.
         """
         torch.save(self.model.state_dict(), path)
+
+

@@ -51,6 +51,7 @@ class PocketTransformer(InteractionLayer):
         return 1
     
     def forward(self, x, y):
+
         pocket, pos_index = x
 
         drug_embed = y[:, :y.shape[1]//2]
@@ -171,7 +172,7 @@ class SelfAttention(nn.Module):
         # Normalize the attention scores to probabilities.
         attention_probs = nn.Softmax(dim=-1)(attention_scores)
         first_line_first_10 = attention_probs[0, 0, 0, :30].cpu().detach().numpy()
-        print(first_line_first_10)
+        #print(first_line_first_10)
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
