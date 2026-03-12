@@ -15,7 +15,7 @@ FS-DTI is a substructure information transformer model used for predicting drug-
 
    ```bash
    git clone https://github.com/xiao456jia/FS-DTI.git
-   cd FP-DTI
+   cd FS-DTI
    ```
 
 2. **Create a New Conda Environment**
